@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-bs-theme="light">
 
 <head>
     <meta charset="UTF-8" />
@@ -25,10 +25,8 @@
         }
 
         .store-item {
-            border: 1px solid #ddd;
             padding: 1rem;
             text-align: center;
-            background-color: #fff;
             transition: transform 0.2s ease-in-out;
         }
 
@@ -44,7 +42,6 @@
 
         /* Footer styling */
         footer {
-            background-color: #f8f9fa;
             padding: 1rem 0;
         }
     </style>
