@@ -3,11 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Landing Page</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="https://kit.fontawesome.com/YOUR-FONT-AWESOME-KEY.js" crossorigin="anonymous"></script> <!-- Optional for icons -->
-    <script>
+    <title>Upload Listing</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+</head>
+<script>
         function toggleDarkMode() {
             document.body.classList.toggle("dark-mode");
             localStorage.setItem("darkMode", document.body.classList.contains("dark-mode"));
@@ -76,12 +75,10 @@
     </style>
 </head>
 <body>
-
-    <!-- Navbar -->
-   <nav class="navbar navbar-expand-lg">
+    <nav class="navbar navbar-expand-lg">
         <div class="container">
-            <a class="navbar-brand" href="index.php">
-                <img src="img/canaryIcon.png" alt="Logo" width="40" height="40"> Canary
+            <a class="navbar-brand" href="../../index.php">
+                <img src="../../img/canaryIcon.png" alt="Logo" width="40" height="40"> Canary
             </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
@@ -98,35 +95,40 @@
             </div>
         </div>
     </nav>
-
-    <!-- Hero Section -->
-    <div class="hero-section">
-        <div class="container">
-            <h1>Canary</h1>
-            <p class="lead">Buying and Selling GPUs Exclusively</p>
-            <div class="mt-4">
-                <a href="pages/store/store.php" class="btn btn-custom">Browse Marketplace</a>
+    <div class="container mt-5">
+        <h2 class="text-center">Upload a New Listing</h2>
+        
+        <form action="upload.php" method="POST" enctype="multipart/form-data" class="p-4 border rounded shadow">
+            <!-- Title -->
+            <div class="mb-3">
+                <label for="title" class="form-label">Listing Title</label>
+                <input type="text" class="form-control" id="title" name="title" placeholder="Enter title" required>
             </div>
-            <div class="mt-4">
-                <a href="pages/login/login.html" class="btn btn-light border">Get Started</a>
+
+            <!-- Description -->
+            <div class="mb-3">
+                <label for="description" class="form-label">Description</label>
+                <textarea class="form-control" id="description" name="description" rows="4" placeholder="Enter a brief description" required></textarea>
             </div>
-        </div>
+
+            <!-- Price -->
+            <div class="mb-3">
+                <label for="price" class="form-label">Price ($)</label>
+                <input type="number" class="form-control" id="price" name="price" placeholder="Enter price" step="0.01" required>
+            </div>
+
+            <!-- Image Upload -->
+            <div class="mb-3">
+                <label for="images" class="form-label">Upload Images</label>
+                <input type="file" class="form-control" id="images" name="images[]" multiple required>
+                <small class="text-muted">You can upload multiple images (JPG, PNG, GIF).</small>
+            </div>
+
+            <!-- Submit Button -->
+            <button type="submit" class="btn btn-primary w-100">Upload Listing</button>
+        </form>
     </div>
 
-    <!-- About Us Section -->
-    <div class="about-section" id="about">
-        <div class="container">
-            <h2>About Us</h2>
-            <p>We are a platform dedicated to connecting buyers and sellers in a seamless way. [Fill this out later]</p>
-        </div>
-    </div>
-
-    <!-- Footer -->
-    <div class="footer">
-        <p>&copy; 2025 MyWebsite. All Rights Reserved.</p>
-        <p>
-            <a href="https://www.flaticon.com/free-icons/canary" title="Canary icons">Canary icons created by Freepik - Flaticon</a>
-        </p>
-    </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
