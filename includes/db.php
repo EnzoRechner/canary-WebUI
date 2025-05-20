@@ -5,10 +5,10 @@ ini_set('display_errors', 1);
 
 // Database configuration
 $config = [
-    'host' => 'localhost',
-    'username' => 'root',
-    'password' => '',
-    'database' => 'Canary'
+    'host' => getenv('DB_HOST') ?: 'localhost',
+    'username' => getenv('DB_USER') ?: 'root',
+    'password' => getenv('DB_PASSWORD') ?: '',
+    'database' => getenv('DB_NAME') ?: 'Canary'
 ];
 
 try {
@@ -61,4 +61,3 @@ function validate_image_upload($file) {
 
     return true;
 }
-?>
