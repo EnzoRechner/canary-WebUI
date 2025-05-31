@@ -1,0 +1,34 @@
+# Composer dependencies
+/vendor/
+composer.lock
+
+# OS or Editor specific files
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# Log files and caches
+/storage/logs/
+/storage/cache/
+
+# Environment and credentials
+.env
+config.ini
+.env.local
+.env.*.local
+/config/config.php
+
+# PHPUnit output
+/phpunit.xml
+/phpunit.xml.dist
+
+# Build artifacts
+/build/
+/dist/
+
+# Node modules (if applicable)
+/node_modules/
+
+# If you use phar to distribute
+*.phar

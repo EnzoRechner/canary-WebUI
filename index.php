@@ -1,3 +1,11 @@
+<?php
+// Start the session
+session_start();
+
+// Check if the user is logged in
+$loggedIn = isset($_SESSION["loggedin"]) && $_SESSION["loggedin"] === true;
+$userName = $loggedIn ? htmlspecialchars($_SESSION["username"]) : ""; // Get username if logged in
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -6,8 +14,7 @@
     <title>Landing Page</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="https://kit.fontawesome.com/YOUR-FONT-AWESOME-KEY.js" crossorigin="anonymous"></script> <!-- Optional for icons -->
-    <script>
+    <script src="https://kit.fontawesome.com/YOUR-FONT-AWESOME-KEY.js" crossorigin="anonymous"></script> <script>
         function toggleDarkMode() {
             document.body.classList.toggle("dark-mode");
             localStorage.setItem("darkMode", document.body.classList.contains("dark-mode"));
@@ -73,57 +80,72 @@
             text-align: center;
             box-shadow: 0px -4px 10px rgba(0, 0, 0, 0.1);
         }
+        /* Style for the welcome message in navbar */
+        .navbar-nav .nav-item.welcome-message {
+            display: flex;
+            align-items: center;
+            padding: .5rem 1rem;
+            color:rgb(0, 0, 0); /* Bootstrap success green */
+            font-weight: bold;
+        }
+        .dark-mode .navbar-nav .nav-item.welcome-message {
+            color:rgb(255, 255, 255); /* Lighter green for dark mode */
+        }
     </style>
 </head>
 <body>
 
-    <!-- Navbar -->
-   <nav class="navbar navbar-expand-lg">
+    <nav class="navbar navbar-expand-lg">
         <div class="container">
-            <a class="navbar-brand" href="index.html">
-                <img src="img/canaryIcon.png" alt="Logo" width="40" height="40"> Canary
+            <a class="navbar-brand" href="index.php"> <img src="favicon.ico" alt="Logo" width="40" height="40"> Canary
             </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
                 <ul class="navbar-nav">
-                    <li class="nav-item"><a class="nav-link" href="pages/store/store.html">Shop</a></li>
-                    <li class="nav-item"><a class="nav-link" href="pages/login/login.html">Register</a></li>
-                    <li class="nav-item"><a class="nav-link" href="pages/login/login.html">Login</a></li>
+                    <li class="nav-item"><a class="nav-link" href="pages/store/store.php">Shop</a></li>
+                    <?php if ($loggedIn): ?>
+                        <li class="nav-item welcome-message">Welcome back, <?php echo $userName; ?>!</li>
+                        <li class="nav-item"><a class="nav-link" href="pages/login/logout.php">Logout</a></li>
+                    <?php else: ?>
+                        <li class="nav-item"><a class="nav-link" href="pages/login/register.php">Register</a></li>
+                        <li class="nav-item"><a class="nav-link" href="pages/login/login.php">Login</a></li>
+                    <?php endif; ?>
                     <li class="nav-item"><button class="btn btn-outline-secondary" onclick="toggleDarkMode()">🌕</button></li>
                 </ul>
             </div>
         </div>
     </nav>
 
-    <!-- Hero Section -->
     <div class="hero-section">
         <div class="container">
             <h1>Canary</h1>
             <p class="lead">Buying and Selling GPUs Exclusively</p>
             <div class="mt-4">
-                <a href="pages/store/store.html" class="btn btn-custom">Browse Marketplace</a>
+                <a href="pages/store/store.php" class="btn btn-custom">Browse Marketplace</a>
             </div>
         </div>
     </div>
 
-    <!-- About Us Section -->
     <div class="about-section" id="about">
         <div class="container">
             <h2>About Us</h2>
             <p>This is a GPU Exclusive Marketplace specializing in fast, secure and connected trade of GPUs.<br>
                Registering with us puts you at the forefront of GPU trade.<br>
                Listing your own GPU via the store page.<br>
-               To browsing the store for GPUs.<br>
+               To Browse the store for GPUs.<br>
                <div class="mt-4">
-                <a href="pages/login/login.html" class="btn btn-light border">Get Started</a>
+                <?php if (!$loggedIn): ?>
+                    <a href="pages/login/login.php" class="btn btn-light border">Get Started</a>
+                <?php else: ?>
+                    <a href="pages/store/store.php" class="btn btn-light border">Go to Store</a>
+                <?php endif; ?>
             </div>
             </p>
         </div>
     </div>
 
-    <!-- Footer -->
     <div class="footer">
         <p>&copy; 2025 MyWebsite. All Rights Reserved.</p>
         <p>
