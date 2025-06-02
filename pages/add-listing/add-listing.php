@@ -1,34 +1,35 @@
 <?php
-// Start the session
 session_start();
-
-// Include config (not strictly needed for displaying the form, but good for consistency)
 require_once '../../config/config.php';
 
-// Check if the user is logged in
 if (!isset($_SESSION["loggedin"]) || $_SESSION["loggedin"] !== true) {
-    // If not logged in, redirect to login page
     header("location: ../login/login.php");
     exit;
 }
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    // Handle the upload and form processing logic here
+$loggedIn = true;
+$userName = htmlspecialchars($_SESSION["username"]);
 
-    // Example: Move uploaded files, validate input, save to DB, etc.
+// --- START NEW LOGIC FOR RESETTING MESSAGES AND BUTTON STATE ---
+// Check if the page was *not* just redirected from a form submission (i.e., it's a fresh load)
+// This assumes 'upload.php' always redirects to 'upload_listing.php'
+// And if a form is submitted, $_SERVER["REQUEST_METHOD"] will be "POST" on upload.php, but GET on the redirect back to this page.
+// The presence of $_SESSION['upload_message'] indicates a redirect from upload.php.
+$showGoToStoreButton = false;
 
-    // Once successful, redirect to the index/store page
-    header("Location: ../../index.php");
-    exit();
+// Show "Go to Store" button only if upload was successful, then reset the flag for next visit
+if (isset($_SESSION['upload_success']) && $_SESSION['upload_success'] === true) {
+    $showGoToStoreButton = true;
+    unset($_SESSION['upload_success']); // Reset so next visit shows "Cancel" and submit button
 } else {
-    // Optional: handle invalid access
-    http_response_code(405); // Method Not Allowed
-    echo "Method not allowed.";
+    $showGoToStoreButton = false;
 }
 
-// Variables for navbar display
-$loggedIn = true; // We know they are logged in if they made it here
-$userName = htmlspecialchars($_SESSION["username"]); // Get username for display
+// Always clear any leftover messages on fresh load
+if (!isset($_SESSION['upload_message'])) {
+    unset($_SESSION['upload_message_type']);
+}
+
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -90,7 +91,6 @@ $userName = htmlspecialchars($_SESSION["username"]); // Get username for display
             height: auto;
             align-content: center;
         }
-
         .btn-custom:hover {
             background-color: #000000;
             color: white;
@@ -109,7 +109,7 @@ $userName = htmlspecialchars($_SESSION["username"]); // Get username for display
             display: flex;
             align-items: center;
             padding: .5rem 1rem;
-            color:rgb(255, 255, 255);
+            color:rgb(0, 0, 0); /* Changed to black for contrast in light mode */
             font-weight: bold;
         }
         .dark-mode .navbar-nav .nav-item.welcome-message {
@@ -130,14 +130,14 @@ $userName = htmlspecialchars($_SESSION["username"]); // Get username for display
                 <ul class="navbar-nav">
                     <li class="nav-item"><a class="nav-link" href="../store/store.php">Shop</a></li>
                     <?php if ($loggedIn): ?>
-                        <li class="nav-item welcome-message"><?php echo $userName; ?>!</li>
+                        <li class="nav-item welcome-message">Welcome, <?php echo $userName; ?>!</li>
                         <li class="nav-item"><a class="nav-link" href="../login/logout.php">Logout</a></li>
-                    <?php else: /* This block won't be reached due to the redirect above, but kept for robustness */ ?>
+                    <?php else: ?>
                         <li class="nav-item"><a class="nav-link" href="../login/register.php">Register</a></li>
                         <li class="nav-item"><a class="nav-link" href="../login/login.php">Login</a></li>
                     <?php endif; ?>
                     <li class="nav-item"><button class="btn btn-outline-secondary"
-                                onclick="toggleDarkMode()">🌕</button></li>
+                                    onclick="toggleDarkMode()">🌕</button></li>
                 </ul>
             </div>
         </div>
@@ -146,10 +146,11 @@ $userName = htmlspecialchars($_SESSION["username"]); // Get username for display
         <h2 class="text-center">Upload a New Listing</h2>
 
         <?php
-        // Display success or error messages from upload.php
+        // Display messages if they exist
         if (isset($_SESSION['upload_message'])) {
             echo '<div class="alert ' . ($_SESSION['upload_message_type'] == 'success' ? 'alert-success' : 'alert-danger') . ' text-center">' . $_SESSION['upload_message'] . '</div>';
-            unset($_SESSION['upload_message']); // Clear the message after displaying
+            // Unset the message immediately after displaying it
+            unset($_SESSION['upload_message']);
             unset($_SESSION['upload_message_type']);
         }
         ?>
@@ -162,7 +163,8 @@ $userName = htmlspecialchars($_SESSION["username"]); // Get username for display
 
             <div class="mb-3">
                 <label for="description" class="form-label">Description</label>
-                <textarea class="form-control" id="description" name="description" rows="4" placeholder="Enter a brief description" required></textarea>
+                <textarea class="form-control" id="description" name="description" rows="4" placeholder="e.g., A brief overview of the item, its condition, and any key features you want to highlight."></textarea>
+                <small class="text-muted">Provide a detailed description of your item (e.g., condition, features, history).</small>
             </div>
 
             <div class="mb-3">
@@ -175,16 +177,41 @@ $userName = htmlspecialchars($_SESSION["username"]); // Get username for display
                 <input type="text" class="form-control" id="location" name="location" placeholder="e.g., Cape Town, Johannesburg" required>
             </div>
 
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <label for="email_contact_detail" class="form-label">Email Contact (Optional)</label>
+                    <input type="email" class="form-control" id="email_contact_detail" name="email_contact_detail" placeholder="Enter email address">
+                    <small class="text-muted">Your email will only be visible to logged-in users viewing your listing.</small>
+                </div>
+                <div class="col-md-6">
+                    <label for="cell_contact_detail" class="form-label">Cell Contact (Optional)</label>
+                    <input type="tel" class="form-control" id="cell_contact_detail" name="cell_contact_detail" placeholder="e.g., +27 82 123 4567">
+                    <small class="text-muted">Your cell number will only be visible to logged-in users viewing your listing.</small>
+                </div>
+            </div>
             <div class="mb-3">
                 <label for="images" class="form-label">Upload Images (Max 3)</label>
                 <input type="file" class="form-control" id="images" name="images[]" multiple accept="image/*" required>
                 <small class="text-muted">You can upload up to 3 images (JPG, PNG, GIF).</small>
             </div>
 
-            <button type="submit" class="btn btn-custom w-100">Upload Listing</button>
-            <hr>
-            <a href="../store/store.php" class="btn btn-custom w-100 justify-content-center">Cancel</a>
+            <?php if ($showGoToStoreButton): // Show "Go to Store" button after successful upload ?>
+                <a href="../store/store.php" class="btn btn-custom w-100 mb-3">Go to Store</a>
+            <?php else: // Otherwise, show "Upload Listing" button and "Cancel" ?>
+                <button type="submit" class="btn btn-custom w-100">Upload Listing</button>
+                <hr>
+                <a href="../store/store.php" class="btn btn-secondary w-100 justify-content-center">Cancel</a>
+            <?php endif; ?>
         </form>
+    </div>
+
+    <div class="footer mt-4 text-center">
+        <p>&copy; <?php echo date("Y"); ?> Canary. All Rights Reserved.</p>
+        <p>
+            <a href="https://www.flaticon.com/free-icons/canary" title="Canary icons">
+                Canary icons created by Freepik Flaticon
+            </a>
+        </p>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>

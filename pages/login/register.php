@@ -1,38 +1,55 @@
 <?php
-// Include the database configuration file
-require_once '../../config/config.php'; // Adjust path if your config.php is elsewhere
+require_once '../../config/config.php';
 
-$first_name = $last_name = $email = $password = $password_hash = "";
-$first_name_err = $last_name_err = $email_err = $password_err = "";
-$registration_success = false;
-$error_message = ""; // To hold general error messages
+$first_name = $last_name = $username = $email = $password_hash = "";
+$first_name_err = $last_name_err = $username_err = $email_err = $password_err = "";
+$error_message = "";
 
-// Processing form data when form is submitted
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
-
-    // Validate First Name (assuming "Username" from your HTML is first_name)
-    // You might want to add a separate input for last_name in your HTML
-    if (empty(trim($_POST["username"]))) { // Using "username" as first_name for now based on your HTML
+    // Validate First Name
+    if (empty(trim($_POST["first_name"]))) {
         $first_name_err = "Please enter your first name.";
     } else {
-        $first_name = trim($_POST["username"]);
+        $first_name = trim($_POST["first_name"]);
     }
 
-    // Since your HTML has 'username' and not 'first_name' and 'last_name',
-    // I'll assume 'username' maps to 'first_name' and 'last_name' can be set to an empty string or derived.
-    // For a proper solution, you should add input fields for first_name and last_name in your HTML.
-    $last_name = ""; // Defaulting last_name to empty as there's no input for it
+    // Validate Last Name
+    if (empty(trim($_POST["last_name"]))) {
+        $last_name_err = "Please enter your last name.";
+    } else {
+        $last_name = trim($_POST["last_name"]);
+    }
 
-    // Validate email
+    // Validate Username
+    if (empty(trim($_POST["username"]))) {
+        $username_err = "Please choose a username.";
+    } else {
+        $sql = "SELECT id FROM users WHERE username = ?";
+        if ($stmt = $mysqli->prepare($sql)) {
+            $stmt->bind_param("s", $param_username);
+            $param_username = trim($_POST["username"]);
+            if ($stmt->execute()) {
+                $stmt->store_result();
+                if ($stmt->num_rows == 1) {
+                    $username_err = "This username is already taken.";
+                } else {
+                    $username = trim($_POST["username"]);
+                }
+            } else {
+                $error_message = "Something went wrong. Please try again.";
+            }
+            $stmt->close();
+        }
+    }
+
+    // Validate Email
     if (empty(trim($_POST["email"]))) {
         $email_err = "Please enter your email.";
     } else {
-        // Prepare a select statement to check if email already exists
         $sql = "SELECT id FROM users WHERE email = ?";
         if ($stmt = $mysqli->prepare($sql)) {
             $stmt->bind_param("s", $param_email);
             $param_email = trim($_POST["email"]);
-
             if ($stmt->execute()) {
                 $stmt->store_result();
                 if ($stmt->num_rows == 1) {
@@ -41,57 +58,42 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                     $email = trim($_POST["email"]);
                 }
             } else {
-                $error_message = "Oops! Something went wrong. Please try again later.";
+                $error_message = "Something went wrong. Please try again.";
             }
             $stmt->close();
         }
     }
 
-    // Validate password (hashedPassword from JavaScript)
+    // Validate Password
     if (empty(trim($_POST["hashedPassword"]))) {
         $password_err = "Password hashing failed or no password provided.";
     } else {
-        // The password has been SHA-256 hashed on the client-side.
-        // PHP's `password_hash()` is generally preferred for stronger hashing with salt,
-        // but since your client-side JS is doing SHA-256, we'll store that.
-        // **SECURITY NOTE:** For a production environment, it is highly recommended
-        // to send the plain text password to the server over HTTPS and use PHP's
-        // `password_hash()` function with `PASSWORD_DEFAULT` for robust hashing
-        // and salting, rather than client-side hashing. Client-side hashing offers
-        // no security against a malicious user who can bypass the JavaScript.
         $password_hash = trim($_POST["hashedPassword"]);
     }
 
-    // Check input errors before inserting into database
-    if (empty($first_name_err) && empty($email_err) && empty($password_err)) {
-        // Prepare an insert statement
-        $sql = "INSERT INTO users (first_name, last_name, email, password_hash) VALUES (?, ?, ?, ?)";
-
+    // Final insert
+    if (empty($first_name_err) && empty($last_name_err) && empty($username_err) && empty($email_err) && empty($password_err)) {
+        $sql = "INSERT INTO users (first_name, last_name, username, email, password_hash) VALUES (?, ?, ?, ?, ?)";
         if ($stmt = $mysqli->prepare($sql)) {
-            $stmt->bind_param("ssss", $param_first_name, $param_last_name, $param_email, $param_password_hash);
-
-            // Set parameters
+            $stmt->bind_param("sssss", $param_first_name, $param_last_name, $param_username, $param_email, $param_password_hash);
             $param_first_name = $first_name;
-            $param_last_name = $last_name; // This will be empty based on current HTML
+            $param_last_name = $last_name;
+            $param_username = $username;
             $param_email = $email;
-            $param_password_hash = $password_hash; // This is the SHA-256 hash from JS
+            $param_password_hash = $password_hash;
 
-            // Attempt to execute the prepared statement
             if ($stmt->execute()) {
-                $registration_success = true;
-                // Redirect to login page or a success page
-                header("../../index.php");
+                header("Location: ../../index.php");
                 exit();
             } else {
-                $error_message = "Something went wrong. Please try again later.";
+                $error_message = "Something went wrong during registration.";
             }
             $stmt->close();
         }
     }
-}
 
-// Close connection
-$mysqli->close();
+    $mysqli->close();
+}
 ?>
 
 <!DOCTYPE html>
@@ -99,37 +101,29 @@ $mysqli->close();
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Register</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         async function hashPassword(event) {
-            event.preventDefault(); // Prevent default form submission
-
-            let password = document.getElementById("password").value;
-            let encoder = new TextEncoder();
-            let data = encoder.encode(password);
-
-            // Hash password using SHA-256
-            let hashBuffer = await crypto.subtle.digest("SHA-256", data);
-            let hashArray = Array.from(new Uint8Array(hashBuffer));
-            let hashHex = hashArray.map(b => b.toString(16).padStart(2, "0")).join("");
-
-            // Set hashed password in hidden input
+            event.preventDefault();
+            const password = document.getElementById("password").value;
+            const encoder = new TextEncoder();
+            const data = encoder.encode(password);
+            const hashBuffer = await crypto.subtle.digest("SHA-256", data);
+            const hashArray = Array.from(new Uint8Array(hashBuffer));
+            const hashHex = hashArray.map(b => b.toString(16).padStart(2, "0")).join("");
             document.getElementById("hashedPassword").value = hashHex;
-
-            // Submit form
             document.getElementById("registerForm").submit();
         }
     </script>
     <style>
         body {
             background-color: #f8f9fa;
+            height: 100vh;
             display: flex;
             justify-content: center;
             align-items: center;
-            height: 100vh;
         }
 
         .register-container {
@@ -155,14 +149,10 @@ $mysqli->close();
             color: white;
             border-radius: 8px;
             padding: 10px;
-            transition: 0.3s;
-            height: auto;
-            align-content: center;
         }
 
         .btn-custom:hover {
             background-color: #000000;
-            color: white;
         }
     </style>
 </head>
@@ -172,34 +162,38 @@ $mysqli->close();
         <h3 class="text-center">Create Account</h3>
 
         <?php
-        // Display error messages
-        if (!empty($first_name_err)) {
-            echo '<div class="alert alert-danger">' . $first_name_err . '</div>';
-        }
-        if (!empty($email_err)) {
-            echo '<div class="alert alert-danger">' . $email_err . '</div>';
-        }
-        if (!empty($password_err)) {
-            echo '<div class="alert alert-danger">' . $password_err . '</div>';
-        }
-        if (!empty($error_message)) {
-            echo '<div class="alert alert-danger">' . $error_message . '</div>';
-        }
-        // No success message here as we are redirecting on success
+        if (!empty($first_name_err)) echo '<div class="alert alert-danger">' . $first_name_err . '</div>';
+        if (!empty($last_name_err)) echo '<div class="alert alert-danger">' . $last_name_err . '</div>';
+        if (!empty($username_err)) echo '<div class="alert alert-danger">' . $username_err . '</div>';
+        if (!empty($email_err)) echo '<div class="alert alert-danger">' . $email_err . '</div>';
+        if (!empty($password_err)) echo '<div class="alert alert-danger">' . $password_err . '</div>';
+        if (!empty($error_message)) echo '<div class="alert alert-danger">' . $error_message . '</div>';
         ?>
 
-        <form id="registerForm" action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]); ?>" method="POST" onsubmit="hashPassword(event)">
+        <form id="registerForm" method="POST" action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]); ?>" onsubmit="hashPassword(event)">
+            <div class="mb-3">
+                <label class="form-label">First Name</label>
+                <input type="text" name="first_name" class="form-control" required value="<?php echo htmlspecialchars($first_name); ?>">
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Last Name</label>
+                <input type="text" name="last_name" class="form-control" required value="<?php echo htmlspecialchars($last_name); ?>">
+            </div>
+
             <div class="mb-3">
                 <label class="form-label">Username</label>
-                <input type="text" name="username" class="form-control" placeholder="Enter your username" required value="<?php echo htmlspecialchars($first_name); ?>">
+                <input type="text" name="username" class="form-control" required value="<?php echo htmlspecialchars($username); ?>">
             </div>
+
             <div class="mb-3">
                 <label class="form-label">Email</label>
-                <input type="email" name="email" class="form-control" placeholder="Enter your email" required value="<?php echo htmlspecialchars($email); ?>">
+                <input type="email" name="email" class="form-control" required value="<?php echo htmlspecialchars($email); ?>">
             </div>
+
             <div class="mb-3">
                 <label class="form-label">Password</label>
-                <input type="password" id="password" class="form-control" placeholder="Enter your password" required>
+                <input type="password" id="password" class="form-control" required>
             </div>
 
             <input type="hidden" id="hashedPassword" name="hashedPassword">
@@ -207,9 +201,8 @@ $mysqli->close();
             <button type="submit" class="btn btn-custom w-100">Register</button>
         </form>
         <hr>
-        <a href="../../index.php" class="btn btn-custom d-flex justify-content-center gap-2">Cancel</a>
+        <a href="../../index.php" class="btn btn-custom d-flex justify-content-center">Cancel</a>
     </div>
-    <hr>
 </body>
 
 </html>

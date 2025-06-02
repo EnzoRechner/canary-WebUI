@@ -131,7 +131,7 @@ $userName = $loggedIn ? htmlspecialchars($_SESSION["username"]) : ""; // Get use
     <div class="about-section" id="about">
         <div class="container">
             <h2>About Us</h2>
-            <p>This is a GPU Exclusive Marketplace specializing in fast, secure and connected trade of GPUs.<br>
+            <p>We are a GPU Exclusive Marketplace specializing in fast, secure and connected trade of GPUs.<br>
                Registering with us puts you at the forefront of GPU trade.<br>
                Listing your own GPU via the store page.<br>
                To Browse the store for GPUs.<br>

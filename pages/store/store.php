@@ -1,13 +1,9 @@
 <?php
-// Start the session
 session_start();
+require_once '../../config/config.php';
 
-// Include the database configuration file
-require_once '../../config/config.php'; // Adjust path based on your file structure
-
-// Check if the user is logged in for navbar display
 $loggedIn = isset($_SESSION["loggedin"]) && $_SESSION["loggedin"] === true;
-$userName = $loggedIn ? htmlspecialchars($_SESSION["username"]) : ""; // Get username if logged in
+$userName = $loggedIn ? htmlspecialchars($_SESSION["username"]) : "";
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -54,17 +50,17 @@ $userName = $loggedIn ? htmlspecialchars($_SESSION["username"]) : ""; // Get use
         }
 
         .product-card {
-            border-radius: 12px; /* Corrected typo: should be single value or shorthand */
+            border-radius: 12px;
             box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
             transition: 0.3s;
             background: white;
-            display: flex; /* Make card content a flex container */
-            flex-direction: column; /* Stack children vertically */
+            display: flex;
+            flex-direction: column;
         }
         .product-card .card-img-top {
             width: 100%;
-            height: 200px; /* Fixed height for images */
-            object-fit: cover; /* Cover the area, crop if necessary */
+            height: 200px;
+            object-fit: cover;
             border-top-left-radius: 12px;
             border-top-right-radius: 12px;
         }
@@ -83,7 +79,7 @@ $userName = $loggedIn ? htmlspecialchars($_SESSION["username"]) : ""; // Get use
             padding: 20px;
             border-radius: 8px;
             background: white;
-            box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1); /* Added box-shadow for consistency */
+            box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
         }
 
         .dark-mode .filter-container {
@@ -131,26 +127,25 @@ $userName = $loggedIn ? htmlspecialchars($_SESSION["username"]) : ""; // Get use
             color: black;
         }
         .dark-mode .filterText {
-            color: white; /* Ensure text is visible in dark mode */
+            color: white;
         }
-        /* Style for the welcome message in navbar */
         .navbar-nav .nav-item.welcome-message {
             display: flex;
             align-items: center;
             padding: .5rem 1rem;
-            color:rgb(0, 0, 0); /* Bootstrap success green */
+            color:rgb(0, 0, 0);
             font-weight: bold;
         }
         .dark-mode .navbar-nav .nav-item.welcome-message {
-            color:rgb(255, 255, 255); /* Lighter green for dark mode */
+            color:rgb(255, 255, 255);
         }
         .card-body {
-            flex-grow: 1; /* Allow card body to take up available space */
+            flex-grow: 1;
             display: flex;
             flex-direction: column;
         }
         .card-text {
-            flex-grow: 1; /* Allow description to grow */
+            flex-grow: 1;
         }
     </style>
 </head>
@@ -209,8 +204,6 @@ $userName = $loggedIn ? htmlspecialchars($_SESSION["username"]) : ""; // Get use
             <div class="col-md-9">
                 <div class="row">
                     <?php
-                    // Prepare a select statement to fetch active listings
-                    // Only fetch listings with status 'active'
                     $sql = "SELECT id, title, description, price, image1_path FROM listings WHERE status = 'active' ORDER BY created_at DESC";
 
                     if ($stmt = $mysqli->prepare($sql)) {
@@ -218,16 +211,12 @@ $userName = $loggedIn ? htmlspecialchars($_SESSION["username"]) : ""; // Get use
                             $result = $stmt->get_result();
 
                             if ($result->num_rows > 0) {
-                                // Loop through result set and display each listing
                                 while ($row = $result->fetch_assoc()) {
-                                    // Construct image path.
-                                    // Assuming image1_path in DB is relative to project root (e.g., 'img/gpu1.jpg').
-                                    // Since store.php is in pages/store/, it needs '../../' to go back to root.
                                     $imagePath = '../../' . htmlspecialchars($row['image1_path']);
-                                    $listingPrice = number_format($row['price'], 2, '.', ','); // Format price for ZAR (e.g., 1,599.99)
+                                    $listingPrice = number_format($row['price'], 2, '.', ',');
                                     $description_display = htmlspecialchars(substr($row['description'], 0, 100));
                                     if (strlen($row['description']) > 100) {
-                                        $description_display .= '...'; // Add ellipsis if description is truncated
+                                        $description_display .= '...';
                                     }
 
                                     echo '
@@ -238,9 +227,9 @@ $userName = $loggedIn ? htmlspecialchars($_SESSION["username"]) : ""; // Get use
                                                 <h5 class="card-title">' . htmlspecialchars($row['title']) . '</h5>
                                                 <p class="card-text flex-grow-1">' . $description_display . '</p>
                                                 <p class="card-text fw-bold">R' . $listingPrice . '</p>
-                                                <a href="#" class="btn btn-custom mt-auto">View Details</a> </div>
-                                        </div>
-                                    </div>';
+                                                <a href="product-details.php?id=' . $row['id'] . '" class="btn btn-custom mt-auto">View Details</a> </div>
+                                            </div>
+                                        </div>';
                                 }
                             } else {
                                 echo '<div class="col-12"><p class="text-center alert alert-info">No active listings found. Be the first to add one!</p></div>';
@@ -253,7 +242,6 @@ $userName = $loggedIn ? htmlspecialchars($_SESSION["username"]) : ""; // Get use
                         echo '<div class="col-12"><p class="text-center alert alert-danger">Database query preparation failed: ' . $mysqli->error . '</p></div>';
                     }
 
-                    // Close connection
                     $mysqli->close();
                     ?>
                 </div>

@@ -2,142 +2,147 @@
 session_start();
 require_once '../../config/config.php';
 
-// Check if user is logged in
-if (!isset($_SESSION["loggedin"]) || $_SESSION["loggedin"] !== true || !isset($_SESSION["id"])) {
-    $_SESSION['upload_message'] = "You must be logged in to add a listing.";
-    $_SESSION['upload_message_type'] = "danger";
+// Check if the user is logged in, otherwise redirect to login page
+if (!isset($_SESSION["loggedin"]) || $_SESSION["loggedin"] !== true) {
     header("location: ../login/login.php");
     exit;
 }
 
-$user_id = $_SESSION["id"];
+// Define variables and initialize with empty values
+$title = $description = $price = $location = $email_contact_detail = $cell_contact_detail = "";
+$image1_path = $image2_path = $image3_path = null; // Initialize image paths as null
 
-// Define upload directory relative to project root
-// Ensure 'uploads/listings/' directory exists and is writable
-$upload_dir = '../../uploads/listings/';
-
-// Create the directory if it doesn't exist
-if (!is_dir($upload_dir)) {
-    mkdir($upload_dir, 0777, true);
-}
-
-// Initialize variables for form data and errors
-$title = $description = $price = $location = "";
-$image_paths = [];
-$errors = [];
-
-// Process form submission
+// Processing form data when form is submitted
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
+    // Validate and sanitize inputs
+    $title = trim($_POST["title"]);
+    $description = trim($_POST["description"]); // Description should be a string
+    $price = filter_var($_POST["price"], FILTER_VALIDATE_FLOAT);
+    $location = trim($_POST["location"]);
+    $email_contact_detail = trim($_POST["email_contact_detail"]);
+    $cell_contact_detail = trim($_POST["cell_contact_detail"]);
 
-    // Validate Title
-    if (empty(trim($_POST["title"]))) {
-        $errors[] = "Please enter a title for the listing.";
-    } else {
-        $title = trim($_POST["title"]);
+    // Basic validation
+    if (empty($title) || empty($description) || $price === false || $price <= 0 || empty($location)) {
+        $_SESSION['upload_message'] = "Please fill in all required fields correctly (Title, Description, Price, Location).";
+        $_SESSION['upload_message_type'] = "danger";
+        header("location: add-listing.php");
+        exit;
     }
 
-    // Validate Description
-    if (empty(trim($_POST["description"]))) {
-        $errors[] = "Please enter a description.";
-    } else {
-        $description = trim($_POST["description"]);
+    $user_id = $_SESSION["id"]; // Get user_id from session
+
+    // Handle image uploads
+    $target_dir = "../../uploads/"; // Directory where images will be saved
+    if (!is_dir($target_dir)) {
+        mkdir($target_dir, 0777, true); // Create directory if it doesn't exist
     }
 
-    // Validate Price
-    if (empty(trim($_POST["price"]))) {
-        $errors[] = "Please enter a price.";
-    } elseif (!is_numeric($_POST["price"]) || $_POST["price"] <= 0) {
-        $errors[] = "Price must be a positive number.";
-    } else {
-        $price = trim($_POST["price"]);
-    }
+    $uploaded_image_paths = [];
+    $allowed_extensions = ['jpg', 'jpeg', 'png', 'gif'];
+    $max_file_size = 5 * 1024 * 1024; // 5MB
 
-    // Validate Location
-    if (empty(trim($_POST["location"]))) {
-        $errors[] = "Please enter a location.";
-    } else {
-        $location = trim($_POST["location"]);
-    }
-
-    // Handle Image Uploads
-    if (isset($_FILES['images']) && count($_FILES['images']['name']) > 0) {
+    if (isset($_FILES['images']['name']) && is_array($_FILES['images']['name'])) {
         $total_files = count($_FILES['images']['name']);
         if ($total_files > 3) {
-            $errors[] = "You can upload a maximum of 3 images.";
-        } else {
-            $allowed_types = ['image/jpeg', 'image/png', 'image/gif'];
-            $max_file_size = 5 * 1024 * 1024; // 5MB
-
-            for ($i = 0; $i < $total_files; $i++) {
-                $file_name = $_FILES['images']['name'][$i];
-                $file_tmp = $_FILES['images']['tmp_name'][$i];
-                $file_size = $_FILES['images']['size'][$i];
-                $file_type = $_FILES['images']['type'][$i];
-                $file_error = $_FILES['images']['error'][$i];
-
-                if ($file_error !== UPLOAD_ERR_OK) {
-                    $errors[] = "Image " . ($i + 1) . " upload error: " . $file_error_messages[$file_error];
-                    continue;
-                }
-                if (!in_array($file_type, $allowed_types)) {
-                    $errors[] = "Image " . ($i + 1) . ": Only JPG, PNG, and GIF files are allowed.";
-                    continue;
-                }
-                if ($file_size > $max_file_size) {
-                    $errors[] = "Image " . ($i + 1) . " size exceeds 5MB limit.";
-                    continue;
-                }
-
-                $extension = pathinfo($file_name, PATHINFO_EXTENSION);
-                $new_file_name = uniqid('listing_', true) . '.' . $extension;
-                $target_file_path = $upload_dir . $new_file_name;
-
-                if (move_uploaded_file($file_tmp, $target_file_path)) {
-                    // Store path relative to project root (e.g., 'uploads/listings/filename.jpg')
-                    $image_paths[] = 'uploads/listings/' . $new_file_name;
-                } else {
-                    $errors[] = "Failed to upload image " . ($i + 1) . ".";
-                }
-            }
-        }
-    } else {
-        $errors[] = "Please upload at least one image.";
-    }
-
-    // If no validation errors, proceed to insert into database
-    if (empty($errors)) {
-        // Prepare image paths for database insertion (handle up to 3 images)
-        $img1 = $image_paths[0] ?? null;
-        $img2 = $image_paths[1] ?? null;
-        $img3 = $image_paths[2] ?? null;
-
-        $sql = "INSERT INTO listings (user_id, title, description, price, location, image1_path, image2_path, image3_path, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'active')";
-
-        if ($stmt = $mysqli->prepare($sql)) {
-            $stmt->bind_param("isdsssss", $user_id, $title, $description, $price, $location, $img1, $img2, $img3);
-
-            if ($stmt->execute()) {
-                $_SESSION['upload_message'] = "Listing uploaded successfully!";
-                $_SESSION['upload_message_type'] = "success";
-                header("location: ../store/store.php"); // Redirect to store page
-                exit;
-            } else {
-                $_SESSION['upload_message'] = "Error: Could not add listing. " . $mysqli->error;
-                $_SESSION['upload_message_type'] = "danger";
-            }
-            $stmt->close();
-        } else {
-            $_SESSION['upload_message'] = "Error: Database statement preparation failed. " . $mysqli->error;
+            $_SESSION['upload_message'] = "You can upload a maximum of 3 images.";
             $_SESSION['upload_message_type'] = "danger";
+            header("location: add-listing.php");
+            exit;
         }
-    } else {
-        // Store errors in session to display on add-listing.php
-        $_SESSION['upload_message'] = implode("<br>", $errors);
-        $_SESSION['upload_message_type'] = "danger";
+
+        for ($i = 0; $i < $total_files; $i++) {
+            $file_name = $_FILES['images']['name'][$i];
+            $file_tmp = $_FILES['images']['tmp_name'][$i];
+            $file_size = $_FILES['images']['size'][$i];
+            $file_error = $_FILES['images']['error'][$i];
+            $file_ext = strtolower(pathinfo($file_name, PATHINFO_EXTENSION));
+
+            if ($file_error === 0) {
+                if ($file_size < $max_file_size) {
+                    if (in_array($file_ext, $allowed_extensions)) {
+                        $new_file_name = uniqid('', true) . '.' . $file_ext;
+                        $file_destination = $target_dir . $new_file_name;
+
+                        if (move_uploaded_file($file_tmp, $file_destination)) {
+                            $uploaded_image_paths[] = 'uploads/' . $new_file_name; // Store path relative to root
+                        } else {
+                            $_SESSION['upload_message'] = "Failed to upload image " . htmlspecialchars($file_name) . ".";
+                            $_SESSION['upload_message_type'] = "danger";
+                            header("location: add-listing.php");
+                            exit;
+                        }
+                    } else {
+                        $_SESSION['upload_message'] = "File type not allowed for " . htmlspecialchars($file_name) . ". Only JPG, JPEG, PNG, GIF are permitted.";
+                        $_SESSION['upload_message_type'] = "danger";
+                        header("location: add-listing.php");
+                        exit;
+                    }
+                } else {
+                    $_SESSION['upload_message'] = "File size too large for " . htmlspecialchars($file_name) . ". Max 5MB.";
+                    $_SESSION['upload_message_type'] = "danger";
+                    header("location: add-listing.php");
+                    exit;
+                }
+            } else if ($file_error !== 4) { // Error 4 means no file uploaded
+                $_SESSION['upload_message'] = "Error uploading " . htmlspecialchars($file_name) . ": Code " . $file_error . ".";
+                $_SESSION['upload_message_type'] = "danger";
+                header("location: add-listing.php");
+                exit;
+            }
+        }
     }
 
+    // Assign uploaded image paths
+    $image1_path = $uploaded_image_paths[0] ?? null;
+    $image2_path = $uploaded_image_paths[1] ?? null;
+    $image3_path = $uploaded_image_paths[2] ?? null;
+
+    // Prepare an insert statement
+    $sql = "INSERT INTO listings (user_id, title, description, price, location, image1_path, image2_path, image3_path, email_contact_detail, cell_contact_detail, status, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'active', NOW(), NOW())";
+
+    if ($stmt = $mysqli->prepare($sql)) {
+        // Bind variables to the prepared statement as parameters
+        // CORRECTED TYPE STRING: i (user_id), s (title), s (description), d (price), s (location), s (img1), s (img2), s (img3), s (email), s (cell)
+        $stmt->bind_param("issdssssss",
+            $user_id,
+            $title,
+            $description,
+            $price,
+            $location,
+            $image1_path,
+            $image2_path,
+            $image3_path,
+            $email_contact_detail,
+            $cell_contact_detail
+        );
+
+        // Attempt to execute the prepared statement
+        if ($stmt->execute()) {
+            $_SESSION['upload_message'] = "Listing uploaded successfully!";
+            $_SESSION['upload_message_type'] = "success";
+            // Set a session variable to indicate successful upload
+            $_SESSION['upload_success'] = true; // NEW LINE
+            header("location: add-listing.php"); // Redirect back to the form page
+            exit;
+        } else {
+            $_SESSION['upload_message'] = "Error: Could not upload listing. " . $stmt->error;
+            $_SESSION['upload_message_type'] = "danger";
+            $_SESSION['upload_success'] = false; // NEW LINE
+        }
+
+        // Close statement
+        $stmt->close();
+    } else {
+        $_SESSION['upload_message'] = "Error: Could not prepare statement. " . $mysqli->error;
+        $_SESSION['upload_message_type'] = "danger";
+        $_SESSION['upload_success'] = false; // NEW LINE
+    }
+
+    // Close connection
     $mysqli->close();
-    // Redirect back to add-listing.php to show messages or if errors occurred
+
+    // Redirect back to upload form if there was an error
     header("location: add-listing.php");
     exit;
 }
