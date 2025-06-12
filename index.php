@@ -131,10 +131,11 @@ $userName = $loggedIn ? htmlspecialchars($_SESSION["username"]) : ""; // Get use
     <div class="about-section" id="about">
         <div class="container">
             <h2>About Us</h2>
-            <p>We are a GPU Exclusive Marketplace specializing in fast, secure and connected trade of GPUs.<br>
+            <p>This is a GPU Exclusive Marketplace specializing in<br>
+               Fast, Secure and Connected trade of GPUs.<br>
                Registering with us puts you at the forefront of GPU trade.<br>
                Listing your own GPU via the store page.<br>
-               To Browse the store for GPUs.<br>
+               Click below to sign up and start trading!<br>
                <div class="mt-4">
                 <?php if (!$loggedIn): ?>
                     <a href="pages/login/login.php" class="btn btn-light border">Get Started</a>
@@ -147,7 +148,7 @@ $userName = $loggedIn ? htmlspecialchars($_SESSION["username"]) : ""; // Get use
     </div>
 
     <div class="footer">
-        <p>&copy; 2025 MyWebsite. All Rights Reserved.</p>
+        <p>&copy; <?php echo date("Y"); ?> Canary. All Rights Reserved.</p>
         <p>
             <a href="https://www.flaticon.com/free-icons/canary" title="Canary icons">Canary icons created by Freepik - Flaticon</a>
         </p>

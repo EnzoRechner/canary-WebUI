@@ -111,7 +111,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             let encoder = new TextEncoder();
             let data = encoder.encode(password);
 
-            // Hash password using SHA-256 (MUST MATCH HASHING METHOD USED DURING REGISTRATION)
             let hashBuffer = await crypto.subtle.digest("SHA-256", data);
             let hashArray = Array.from(new Uint8Array(hashBuffer));
             let hashHex = hashArray.map(b => b.toString(16).padStart(2, "0")).join("");

@@ -189,9 +189,6 @@ $userName = $loggedIn ? htmlspecialchars($_SESSION["username"]) : "";
                     <ul class="list-group">
                         <li class="list-group-item"><a href="#" class="text-decoration-none">All</a></li>
                         <li class="list-group-item"><a href="#" class="text-decoration-none">Graphics Cards</a></li>
-                        <li class="list-group-item"><a href="#" class="text-decoration-none">Laptops</a></li>
-                        <li class="list-group-item"><a href="#" class="text-decoration-none">Monitors</a></li>
-                        <li class="list-group-item"><a href="#" class="text-decoration-none">Accessories</a></li>
                     </ul>
                     <div class="mt-3">
                         <a href="../../index.php" class="btn btn-custom">Home</a> </div>
